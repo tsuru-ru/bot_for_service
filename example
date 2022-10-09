@@ -1,0 +1,33 @@
+import telebot; #библиоетка
+
+bot = telebot.TeleBot('5604115254:AAHshRSViObGswt-TcHP37WPFcA7ZQw6714'); #инициализация бота для телеграмма и его АР!
+
+@bot.message_handler(content_types=['text'])
+def get_text_messages(message): #получает сообщение от пользователя
+  if message.text.lower() == "привет": #если это привет, без разницы на регистр
+      bot.send_message(message.from_user.id, "Привет. Сегодня прекрасная погода.")
+      keyboard = telebot.types.InlineKeyboardMarkup()
+      
+      #создание кнопкт
+      key_oven = telebot.types.InlineKeyboardButton(text='Додо', callback_data='restorane')
+      keyboard.add(key_oven) 
+      
+      #нажатие кнопки
+      bot.send_message(message.from_user.id, text='Откуда вы хотите сделать доставку?', reply_markup=keyboard)
+
+
+  elif message.text == "/help": #если это хелп
+      bot.send_message(message.from_user.id, "Напиши Привет")
+  else:
+      bot.send_message(message.from_user.id, "Я тебя не понимаю. Напиши /help.")
+      
+
+
+@bot.callback_query_handler(func=lambda call: True) #если кнопка нажата
+def callback_worker(call):
+  if call.data == "restorane": #какая кнопка нажата
+    msg = "Мы вас поняли!" #просто текст 
+    bot.send_message(call.message.chat.id, msg) #отправляем тескт как сообщение
+       
+
+bot.polling(none_stop=True, interval=0)
