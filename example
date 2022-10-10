@@ -1,51 +1,117 @@
 import telebot;
 from telebot import types
 
+
+
 bot = telebot.TeleBot('5604115254:AAHshRSViObGswt-TcHP37WPFcA7ZQw6714');
 
-mess1 = []
-mess2 = []
-restoran = []
+class Order_D():
+    def __init__(self, name, time,bank , card_number):
+        self.bank = bank
+        self.name = name
+        self.time= time
+        self.card_number = card_number
+        
+    def odering(self, restoran, menu, price):
+        self.restoran = restoran
+        self.price = price
+        self.menu = menu
+        
+
+class Order_P():
+     def __init__(self, name, restoran):
+         self.name = name
+         self.restoran = restoran
+        
+     def odering(self, menu, price, d_name):
+        
+        self.price = price
+        self.menu = menu
+        self.d_name = d_name
+       
+    
+        
+
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
     bot.send_message(message.chat.id,'Вас приветстувет бот-огранайзер доставки блюд!')
     keyboard = types.InlineKeyboardMarkup()
-    key_oven = types.InlineKeyboardButton(text='да', callback_data='ответ')
     keyboard.row( types.InlineKeyboardButton(text='покупатель', callback_data='ответ_покупатель'), types.InlineKeyboardButton(text='сборщик заказов', callback_data='ответ_сборщик'))
     bot.send_message(message.chat.id,'Кем будете?', reply_markup=keyboard )
+    
+@bot.message_handler(commands=['order'])
+def order_message(message):
+    bot.send_message(message.chat.id, "Введите ваше имя")
+    
+@bot.message_handler(commands=['help'])
+def help_message(message):
+    bot.send_message(message.chat.id,'/заказы или /начать')
+    
 
 
-'''
-@bot.message_handler(content_types=['text'])
-def get_text_messages(message):
-  if message.text.lower() == "привет":
-      bot.send_message(message.from_user.id, "Привет. Сегодня прекрасная погода.")
-      keyboard = telebot.types.InlineKeyboardMarkup()
-      key_oven = telebot.types.InlineKeyboardButton(text='Додо', callback_data='restorane')
-      keyboard.add(key_oven)
-      bot.send_message(message.from_user.id, text='Откуда вы хотите сделать доставку?', reply_markup=keyboard)
-'''
+
 @bot.message_handler(content_types=['another'])  
-def get_messages_time(message):
+def get_messages(message):
     bot.send_message(message.from_user.id, "Введите")
     
 @bot.message_handler(content_types=['text'])  
 def get_messages_time(message):
-    if len(message.text.split(",")) == 3:
-        mess = message.text.split(",")
-        bot.send_message(message.from_user.id, "Ваше время на ожидание оплаты: {} минут".format(mess1[0].split()[0]))
-        bot.send_message(message.from_user.id, "Ваш банк: {}".format(mess1[1]))
-        bot.send_message(message.from_user.id, "Вашy номер карты: {}".format(mess1[2]))
+    if len(message.text.split(",")) == 4:
+        mess1 = message.text.split(",")
+        person = Order_D(mess1[0], mess1[1].split()[0],mess1[2],mess1[3],)
+        bot.send_message(message.from_user.id, "Ваше время на ожидание оплаты: {} минут".format(person.time))
+        bot.send_message(message.from_user.id, "Ваш банк: {}".format(person.bank))
+        bot.send_message(message.from_user.id, "Ваш номер карты: {}".format(person.card_number))
         bot.send_message(message.from_user.id, "Участники уведомлены!")
-    elif len(message.text.split(" ")) == 2:
-        mess2 = message.text.split(" ")
-        bot.send_message(message.from_user.id, "Ваше блюдо {}".format(mess2[0]))
-        bot.send_message(message.from_user.id, "Ваш счет: {}".format(mess2[1]))
+        f=open('файл_сборщики.txt', 'a')
+        f.writelines(message.text+"\n")
+        
+    elif len(message.text.split(",")) == 3:
+        mess2 = message.text.split(", ")
+        person_p = Order_P("", "")
+        person_p.odering(mess2[0], mess2[1], mess2[2])
+        bot.send_message(message.from_user.id, "Ваше блюдо {}".format(person_p.menu))
+        bot.send_message(message.from_user.id, "Ваш счет: {}".format(person_p.price))
+        bot.send_message(message.from_user.id, "Имя сборщика: {}".format(person_p.d_name))
+        
+        f=open('файл_сборщики.txt', 'r')
+        f2=open('файл_заказчики.txt', 'a')
+        f2.writelines(message.text+"\n")
+        data = f.readline().split(", ")
+        flag = True  
+        while data[0] != person_p.d_name or data!='':
+            if data == "":
+                flag = False
+            else:
+                data = f.readline().split(", ")
+            
+        if flag:
+            bot.send_message(message.from_user.id, "Заказ уточнен. Время на оплату: {} минут".format(data[1].split(" ")[0]))
+            bot.send_message(message.from_user.id, data[2]+ " - "+data[3])
+        else:
+            bot.send_message(message.from_user.id, "Нет данных для заказа. Выберите другого сборщика")
+        
     else:
-        bot.send_message(message.from_user.id, "Имя сборщика: {}".format(message.text))
+        f2=open('файл_заказчики.txt', 'r')
+        data = f2.readline()
+        flag = True
+        while flag:
+            if data == "":
+                bot.send_message(message.from_user.id, "Заказов нет")
+                flag = False
+                break
+            if data.split(", ")[2][:-1] != message.text:
+                data = f2.readline()
+            else:
+                data = data.split(", ")
+                keyboard = types.InlineKeyboardMarkup()
+                bot.send_message(message.from_user.id, "Заказ")
 
-    
+                keyboard.add( types.InlineKeyboardButton(text='подтвердить', callback_data='подтверждение'))
+                bot.send_message(message.from_user.id, "{}, {}".format(data[0], data[1]))
+                bot.send_message(message.from_user.id,"После получения перевода и оформления заказа в ресторане, нажмите кнопку 'подтвердить'.", reply_markup=keyboard )
+                break
 
 
                                                  
@@ -53,6 +119,8 @@ def get_messages_time(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
   if call.data == "ответ_покупатель":
+      
+      
       answear = """Вы учавствуете в коллективной доставке!
 Просьба в теченнии 20 минут указать ресторан, желаемые блюда и имя заказчика, в целях упрощения перевода средств. После оформления у вас будет время перевести средства на счет сборщика. Вы можете выбрать ресторан из списка или указать свой."""
       
@@ -62,26 +130,37 @@ def callback_worker(call):
                     types.InlineKeyboardButton(text='Пицца Чеддер', callback_data='пицца_чеддер'))
       keyboard2.row(types.InlineKeyboardButton(text='Суши WOK',
                                                callback_data='wok'), types.InlineKeyboardButton(text='Еда.Рядом', callback_data='еда_рядом'))
-      
-      
+
       bot.send_message(call.message.chat.id, answear, reply_markup=keyboard2)
       
   if call.data == 'ответ_сборщик':
+    person = "сборщик"
     keyboard1 = types.InlineKeyboardMarkup()
     keyboard1.row( types.InlineKeyboardButton(text='да', callback_data='ответ_да'), types.InlineKeyboardButton(text='нет', callback_data='ответ_нет'))
     types.InlineKeyboardButton(text='да', callback_data='ответ_да'), types.InlineKeyboardButton(text='нет', callback_data='ответ_нет')
     bot.send_message(call.message.chat.id,'Инициализировать сборку?', reply_markup=keyboard1)
     
   elif call.data == "ответ_да":
-    answear = "Уточните дедлайн формления заказов и перевода средств в формате: 20 мин, ВТБ, 0000 0000 0000 0000"
+    
+    answear = "Введите фамилию и уточните дедлайн формления заказов и перевода средств в формате: Иванов, 20 мин, ВТБ, 0000 0000 0000 0000"
     bot.send_message(call.message.chat.id, answear)
     
   elif call.data == "ответ_нет":
     bot.send_message(call.message.chat.id, "Если будет что-то нужно, нажмите /start")
   elif call.data == "море_суши":
-      restoran.append("Море суши")
+      person_p = Order_P("", "Море суши")
       bot.send_message(call.message.chat.id, "Введите название блюда, его стоимость. Потом имя сборщика")
-      
+  elif call.data == "пицца_чеддер":
+      person_p = Order_P("", "Пицца Чеддер")
+      bot.send_message(call.message.chat.id, "Введите название блюда, его стоимость. Потом имя сборщика")
+  elif call.data == "wok":
+      person_p=Order_P("", "Суши WOK")
+      bot.send_message(call.message.chat.id, "Введите название блюда, его стоимость. Потом имя сборщика")
+  elif call.data == "еда_рядом":
+      person_p=Order_P("", "Еда.Рядом")
+      bot.send_message(call.message.chat.id, "Введите название блюда, его стоимость, потом имя сборщика")
+  elif call.data == 'подтверждение':
+      bot.send_message(call.message.chat.id, "Отлично!")
       
       
 
