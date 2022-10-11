@@ -46,7 +46,7 @@ def order_message(message):
     
 @bot.message_handler(commands=['help'])
 def help_message(message):
-    bot.send_message(message.chat.id,'/заказы или /начать')
+    bot.send_message(message.chat.id,'/start - для инициализации или /order - для просмотра заказов для сборщика')
     
 
 
@@ -68,30 +68,33 @@ def get_messages_time(message):
         f.writelines(message.text+"\n")
         
     elif len(message.text.split(",")) == 3:
-        mess2 = message.text.split(", ")
-        person_p = Order_P("", "")
+        mess2 = message.text.split(",")
+        person_p = Order_P("","")
         person_p.odering(mess2[0], mess2[1], mess2[2])
         bot.send_message(message.from_user.id, "Ваше блюдо {}".format(person_p.menu))
         bot.send_message(message.from_user.id, "Ваш счет: {}".format(person_p.price))
         bot.send_message(message.from_user.id, "Имя сборщика: {}".format(person_p.d_name))
-        
-        f=open('файл_сборщики.txt', 'r')
+        f3=open('файл_сборщики.txt', 'r')
         f2=open('файл_заказчики.txt', 'a')
         f2.writelines(message.text+"\n")
-        data = f.readline().split(", ")
-        flag = True  
-        while data[0] != person_p.d_name or data!='':
-            if data == "":
-                flag = False
+        
+        data = f3.readline().split(",") 
+        while data[0] != "":
+            if person_p.d_name.lower()[1:] in data[0].lower():
+                break
             else:
-                data = f.readline().split(", ")
+                data = f3.readline().split(",")
             
-        if flag:
-            bot.send_message(message.from_user.id, "Заказ уточнен. Время на оплату: {} минут".format(data[1].split(" ")[0]))
+        
+        
+        if data[0] != "":
+            bot.send_message(message.from_user.id, "Заказ уточнен. Время на оплату: {} минут".format(data[1]))
             bot.send_message(message.from_user.id, data[2]+ " - "+data[3])
         else:
-            bot.send_message(message.from_user.id, "Нет данных для заказа. Выберите другого сборщика")
-        
+            bot.send_message(message.from_user.id, "Нет данных для заказа.")
+            
+    elif  message.text.find("/") == 0:
+        bot.send_message(message.from_user.id, "Ошибка команды")
     else:
         f2=open('файл_заказчики.txt', 'r')
         data = f2.readline()
@@ -112,7 +115,7 @@ def get_messages_time(message):
                 bot.send_message(message.from_user.id, "{}, {}".format(data[0], data[1]))
                 bot.send_message(message.from_user.id,"После получения перевода и оформления заказа в ресторане, нажмите кнопку 'подтвердить'.", reply_markup=keyboard )
                 break
-
+    
 
                                                  
 
